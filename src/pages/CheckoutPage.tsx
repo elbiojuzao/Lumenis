@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CreditCard, Check, ChevronsRight } from 'lucide-react';
+import { CreditCard, Check } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
-import { mockOrders } from '../data/products';
 import { nanoid } from 'nanoid';
 
 const CheckoutPage: React.FC = () => {

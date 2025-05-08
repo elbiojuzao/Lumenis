@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, Plus, MapPin, Check, Edit, Trash2 } from 'lucide-react';
+import { Home, Plus, MapPin, Edit, Trash2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const AddressPage: React.FC = () => {

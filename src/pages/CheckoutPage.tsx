@@ -1,110 +1,138 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CreditCard, Check } from 'lucide-react';
+import { CreditCard, Banknote, Check, Loader2 } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
-import { nanoid } from 'nanoid';
+
+type Address = {
+  id: string;
+  street: string;
+  number: string;
+  complement?: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  isMain: boolean;
+};
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
-  const { items, subtotal, shipping, discount, total, clearCart } = useCart();
+  const { items, subtotal, shipping, discount, total } = useCart();
   const { addresses, currentUser } = useAuth();
   
-  const [selectedAddressId, setSelectedAddressId] = useState<string>(
-    addresses.find(addr => addr.isMain)?.id || (addresses[0]?.id || '')
-  );
-  
-  const [paymentMethod, setPaymentMethod] = useState<'credit-card' | 'bank-transfer'>('credit-card');
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('');
+  const [paymentMethod, setPaymentMethod] = useState<'mercado-pago' | 'pix'>('mercado-pago');
   const [isProcessing, setIsProcessing] = useState(false);
-  
-  const handleSubmitOrder = (e: React.FormEvent) => {
+  const [error, setError] = useState<string | null>(null);
+
+  // Inicializa com o endereço principal ou o primeiro disponível
+  useEffect(() => {
+    if (addresses.length > 0) {
+      const mainAddress = addresses.find(addr => addr.isMain) || addresses[0];
+      setSelectedAddressId(mainAddress.id);
+    }
+  }, [addresses]);
+
+  const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!selectedAddressId) {
-      alert('Please select a shipping address');
+      setError('Selecione um endereço de entrega');
       return;
     }
-    
+
     setIsProcessing(true);
-    
-    // Simulate order processing
-    setTimeout(() => {
-      // Create new order
-      const newOrder = {
-        id: `ORD-${nanoid(6)}`,
-        userId: currentUser?.id || '',
-        items: items.map(item => ({
-          productId: item.product.id,
-          name: item.product.name,
-          price: item.product.price,
-          quantity: item.quantity
-        })),
-        total,
-        status: 'pending' as const,
-        shippingAddress: addresses.find(addr => addr.id === selectedAddressId) || addresses[0],
-        paymentMethod: paymentMethod === 'credit-card' ? 'Credit Card' : 'Bank Transfer',
-        createdAt: new Date().toISOString()
-      };
-      
-      // In a real app, we would save to database
-      // mockOrders.push(newOrder);
-      
-      // Clear the cart
-      clearCart();
-      
-      // Navigate to success page (dummy page, we'll show a confirmation instead)
+    setError(null);
+
+    try {
+      // 1. Criar preferência no Mercado Pago
+      const response = await fetch('http://localhost:3000/api/create-mercado-pago-preference', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          items: items.map(item => ({
+            title: item.product.name,
+            quantity: item.quantity,
+            unit_price: item.product.price,
+          })),
+          userId: currentUser?.id,
+          addressId: selectedAddressId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao criar pagamento');
+      }
+
+      const { preferenceId } = await response.json();
+
+      // 2. Redirecionar para o checkout do Mercado Pago
+      window.location.href = `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${preferenceId}`;
+
+    } catch (err) {
+      console.error('Erro no checkout:', err);
+      setError('Erro ao processar pagamento. Tente novamente.');
       setIsProcessing(false);
-      navigate('/profile', { state: { orderSuccess: true, orderId: newOrder.id } });
-    }, 1500);
+    }
   };
-  
+
   const selectedAddress = addresses.find(addr => addr.id === selectedAddressId);
-  
+
+  // Redireciona se o carrinho estiver vazio
   if (items.length === 0) {
     navigate('/cart');
     return null;
   }
-  
+
+  // Caso não tenha endereços cadastrados
   if (addresses.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">No Shipping Address</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Nenhum endereço cadastrado</h1>
           <p className="text-lg text-gray-600 mb-8">
-            You need to add a shipping address before you can checkout.
+            Você precisa cadastrar um endereço antes de finalizar a compra.
           </p>
           <button 
             onClick={() => navigate('/addresses')}
             className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition duration-150"
           >
-            Add Address
+            Cadastrar Endereço
           </button>
         </div>
       </div>
     );
   }
-  
+
   return (
     <div className="bg-gray-50 py-10 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-8">Checkout</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-8">Finalizar Compra</h1>
         
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg border border-red-200">
+            {error}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Checkout Form */}
+          {/* Formulário de Checkout */}
           <div className="lg:col-span-2">
             <form onSubmit={handleSubmitOrder}>
-              {/* Shipping Address */}
+              {/* Seção de Endereço */}
               <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-                <h2 className="text-lg font-semibold text-gray-900 mb-6">Endereço de entrega</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-6">Endereço de Entrega</h2>
                 
                 <div className="space-y-4">
-                  {addresses.map(address => (
+                  {addresses.map((address: Address) => (
                     <div key={address.id} className="flex items-start">
                       <input
                         type="radio"
                         id={`address-${address.id}`}
                         name="shipping-address"
-                        value={address.id}
                         checked={selectedAddressId === address.id}
                         onChange={() => setSelectedAddressId(address.id)}
                         className="mt-1 h-4 w-4 text-purple-600 focus:ring-purple-500"
@@ -114,52 +142,49 @@ const CheckoutPage: React.FC = () => {
                           {address.street}, {address.number}
                           {address.isMain && (
                             <span className="ml-2 text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded">
-                              Endereço Principal
+                              Principal
                             </span>
                           )}
                         </div>
                         <div className="text-gray-600 text-sm">
                           {address.complement && `${address.complement}, `}
-                          {address.neighborhood}, {address.city}, {address.state} - {address.zipCode}
+                          {address.neighborhood}, {address.city} - {address.state}
                         </div>
                       </label>
                     </div>
                   ))}
                 </div>
                 
-                <div className="mt-6">
-                  <button 
-                    type="button"
-                    onClick={() => navigate('/addresses')}
-                    className="text-purple-600 hover:text-purple-800 text-sm font-medium"
-                  >
-                    + Add novo endereço
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate('/addresses')}
+                  className="mt-4 text-purple-600 hover:text-purple-800 text-sm font-medium"
+                >
+                  + Adicionar novo endereço
+                </button>
               </div>
-              
-              {/* Payment Method */}
+
+              {/* Seção de Pagamento */}
               <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-                <h2 className="text-lg font-semibold text-gray-900 mb-6">Metodo de pagamento</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-6">Método de Pagamento</h2>
                 
                 <div className="space-y-4">
                   <div className="flex items-start">
                     <input
                       type="radio"
-                      id="credit-card"
+                      id="mercado-pago"
                       name="payment-method"
-                      value="credit-card"
-                      checked={paymentMethod === 'credit-card'}
-                      onChange={() => setPaymentMethod('credit-card')}
+                      checked={paymentMethod === 'mercado-pago'}
+                      onChange={() => setPaymentMethod('mercado-pago')}
                       className="mt-1 h-4 w-4 text-purple-600 focus:ring-purple-500"
                     />
-                    <label htmlFor="credit-card" className="ml-3 block">
+                    <label htmlFor="mercado-pago" className="ml-3 block">
                       <div className="flex items-center text-gray-900 font-medium">
-                        <CreditCard size={20} className="mr-2 text-gray-700" />
-                        Cartão de Crédito
+                        <CreditCard className="mr-2 h-5 w-5" />
+                        Mercado Pago
                       </div>
-                      <div className="text-gray-600 text-sm">
-                        Pagamento seguro com seu cartão de crédito
+                      <div className="text-gray-600 text-sm mt-1">
+                        Cartão de crédito, débito ou boleto
                       </div>
                     </label>
                   </div>
@@ -167,162 +192,91 @@ const CheckoutPage: React.FC = () => {
                   <div className="flex items-start">
                     <input
                       type="radio"
-                      id="bank-transfer"
+                      id="pix"
                       name="payment-method"
-                      value="bank-transfer"
-                      checked={paymentMethod === 'bank-transfer'}
-                      onChange={() => setPaymentMethod('bank-transfer')}
+                      checked={paymentMethod === 'pix'}
+                      onChange={() => setPaymentMethod('pix')}
                       className="mt-1 h-4 w-4 text-purple-600 focus:ring-purple-500"
                     />
-                    <label htmlFor="bank-transfer" className="ml-3 block">
+                    <label htmlFor="pix" className="ml-3 block">
                       <div className="flex items-center text-gray-900 font-medium">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 text-gray-700">
-                          <rect x="2" y="6" width="20" height="12" rx="2"></rect>
-                          <path d="M12 12h.01"></path>
-                          <path d="M17 12h.01"></path>
-                          <path d="M7 12h.01"></path>
-                        </svg>
-                        Transferencia bancaria (pix)
+                        <Banknote className="mr-2 h-5 w-5" />
+                        Pix
                       </div>
-                      <div className="text-gray-600 text-sm">
-                        Pagamento via transferencia bancaria
+                      <div className="text-gray-600 text-sm mt-1">
+                        Pagamento instantâneo
                       </div>
                     </label>
                   </div>
                 </div>
-                
-                {/* Credit Card Form (simplified for demo purposes) */}
-                {paymentMethod === 'credit-card' && (
-                  <div className="mt-6 space-y-4">
-                    <div>
-                      <label htmlFor="card-number" className="block text-sm font-medium text-gray-700 mb-1">
-                        Card Number
-                      </label>
-                      <input
-                        type="text"
-                        id="card-number"
-                        placeholder="XXXX XXXX XXXX XXXX"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
-                      />
+
+                {/* Informações de Segurança */}
+                <div className="mt-6 bg-blue-50 p-4 rounded-md">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 pt-0.5">
+                      <svg className="h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
                     </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="expiry-date" className="block text-sm font-medium text-gray-700 mb-1">
-                          Expiry Date
-                        </label>
-                        <input
-                          type="text"
-                          id="expiry-date"
-                          placeholder="MM/YY"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label htmlFor="cvv" className="block text-sm font-medium text-gray-700 mb-1">
-                          CVV
-                        </label>
-                        <input
-                          type="text"
-                          id="cvv"
-                          placeholder="XXX"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="cardholder-name" className="block text-sm font-medium text-gray-700 mb-1">
-                        Cardholder Name
-                      </label>
-                      <input
-                        type="text"
-                        id="cardholder-name"
-                        placeholder="Name as it appears on card"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
-                      />
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-blue-800">Pagamento Seguro</h3>
+                      <p className="mt-1 text-sm text-blue-700">
+                        Todos os pagamentos são processados pelo Mercado Pago, garantindo a segurança dos seus dados.
+                      </p>
                     </div>
                   </div>
-                )}
-                
-                {/* Bank Transfer Info */}
-                {paymentMethod === 'bank-transfer' && (
-                  <div className="mt-6 bg-blue-50 p-4 rounded-md">
-                    <div className="flex items-start">
-                      <div className="flex-shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
-                          <circle cx="12" cy="12" r="10"></circle>
-                          <path d="M12 16v-4"></path>
-                          <path d="M12 8h.01"></path>
-                        </svg>
-                      </div>
-                      <div className="ml-3">
-                        <h3 className="text-sm font-medium text-blue-800">Bank Transfer Instructions</h3>
-                        <div className="mt-2 text-sm text-blue-700">
-                          <p>After placing your order, please transfer the total amount to:</p>
-                          <p className="mt-1">Bank: National Bank</p>
-                          <p>Account Name: WebShop Inc.</p>
-                          <p>Account Number: 1234567890</p>
-                          <p>Reference: Your order number</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
-              
-              {/* Checkout Button (Mobile) */}
+
+              {/* Botão de Finalizar Compra (Mobile) */}
               <div className="lg:hidden">
-                <button 
+                <button
                   type="submit"
                   disabled={isProcessing}
-                  className={`w-full ${
-                    isProcessing 
-                      ? 'bg-purple-400 cursor-not-allowed' 
-                      : 'bg-purple-600 hover:bg-purple-700'
-                  } text-white py-3 px-4 rounded-lg font-medium flex items-center justify-center transition duration-150`}
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg font-medium flex items-center justify-center transition duration-150 disabled:bg-purple-400 disabled:cursor-not-allowed"
                 >
                   {isProcessing ? (
                     <>
-                      <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                       Processando...
                     </>
                   ) : (
                     <>
-                      Place Order - ${total.toFixed(2)}
+                      <Check className="mr-2 h-5 w-5" />
+                      Finalizar Compra - R$ {total.toFixed(2)}
                     </>
                   )}
                 </button>
               </div>
             </form>
           </div>
-          
-          {/* Order Summary */}
-          <div className="bg-white rounded-lg shadow-md p-6 h-fit">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Pedido</h2>
+
+          {/* Resumo do Pedido */}
+          <div className="bg-white rounded-lg shadow-md p-6 h-fit sticky top-4">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Resumo do Pedido</h2>
             
             <div className="space-y-4 mb-6">
               {items.map(item => (
                 <div key={item.product.id} className="flex justify-between items-center">
                   <div className="flex items-center">
-                    <div className="bg-gray-100 rounded-md w-10 h-10 flex items-center justify-center mr-3">
-                      <img 
-                        src={item.product.imageSrc} 
-                        alt={item.product.name}
-                        className="w-8 h-8 object-cover rounded"
-                      />
+                    <div className="bg-gray-100 rounded-md w-10 h-10 flex items-center justify-center mr-3 overflow-hidden">
+                      {item.product.imageSrc ? (
+                        <img 
+                          src={item.product.imageSrc} 
+                          alt={item.product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="text-gray-400 text-xs">Sem imagem</div>
+                      )}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{item.product.name}</p>
-                      <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
+                      <p className="text-sm font-medium text-gray-900 line-clamp-1">{item.product.name}</p>
+                      <p className="text-xs text-gray-500">Qtd: {item.quantity}</p>
                     </div>
                   </div>
                   <span className="text-sm font-medium text-gray-900">
-                    ${(item.product.price * item.quantity).toFixed(2)}
+                    R$ {(item.product.price * item.quantity).toFixed(2)}
                   </span>
                 </div>
               ))}
@@ -331,81 +285,72 @@ const CheckoutPage: React.FC = () => {
             <div className="border-t border-gray-200 pt-4 space-y-2">
               <div className="flex justify-between items-center text-sm text-gray-700">
                 <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>R$ {subtotal.toFixed(2)}</span>
               </div>
               
               <div className="flex justify-between items-center text-sm text-gray-700">
-                <span>Envio</span>
-                <span>${shipping.toFixed(2)}</span>
+                <span>Frete</span>
+                <span>R$ {shipping.toFixed(2)}</span>
               </div>
               
               {discount > 0 && (
                 <div className="flex justify-between items-center text-sm text-green-600">
                   <span>Desconto</span>
-                  <span>-${discount.toFixed(2)}</span>
+                  <span>-R$ {discount.toFixed(2)}</span>
                 </div>
               )}
               
-              <div className="border-t pt-2 mt-2">
+              <div className="border-t border-gray-200 pt-3 mt-2">
                 <div className="flex justify-between items-center font-semibold text-gray-900">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>R$ {total.toFixed(2)}</span>
                 </div>
               </div>
             </div>
-            
-            {/* Shipping Address Summary */}
+
+            {/* Endereço Selecionado */}
             {selectedAddress && (
               <div className="mt-6 border-t border-gray-200 pt-4">
                 <h3 className="text-sm font-medium text-gray-900 mb-2">Enviar para:</h3>
-                <div className="text-sm text-gray-600">
-                  <p>
-                    {selectedAddress.street}, {selectedAddress.number}
-                    {selectedAddress.complement && `, ${selectedAddress.complement}`}
-                  </p>
+                <div className="text-sm text-gray-600 space-y-1">
+                  <p>{selectedAddress.street}, {selectedAddress.number}</p>
+                  {selectedAddress.complement && <p>{selectedAddress.complement}</p>}
                   <p>{selectedAddress.neighborhood}</p>
-                  <p>{selectedAddress.city}, {selectedAddress.state} - {selectedAddress.zipCode}</p>
+                  <p>{selectedAddress.city} - {selectedAddress.state}</p>
+                  <p>CEP: {selectedAddress.zipCode}</p>
                 </div>
               </div>
             )}
-            
-            {/* Checkout Button (Desktop) */}
+
+            {/* Botão de Finalizar Compra (Desktop) */}
             <div className="mt-8 hidden lg:block">
-              <button 
+              <button
                 type="submit"
                 form="checkout-form"
                 disabled={isProcessing}
                 onClick={handleSubmitOrder}
-                className={`w-full ${
-                  isProcessing 
-                    ? 'bg-purple-400 cursor-not-allowed' 
-                    : 'bg-purple-600 hover:bg-purple-700'
-                } text-white py-3 px-4 rounded-lg font-medium flex items-center justify-center transition duration-150`}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg font-medium flex items-center justify-center transition duration-150 disabled:bg-purple-400 disabled:cursor-not-allowed"
               >
                 {isProcessing ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                     Processando...
                   </>
                 ) : (
                   <>
-                    <Check size={20} className="mr-2" />
-                    Place Order
+                    <Check className="mr-2 h-5 w-5" />
+                    Finalizar Compra
                   </>
                 )}
               </button>
             </div>
-            
-            {/* Secure Checkout Message */}
+
+            {/* Selo de Segurança */}
             <div className="mt-4 flex items-center justify-center text-xs text-gray-500">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              <svg className="mr-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
-              Secure checkout - your data is protected
+              Compra segura - Seus dados estão protegidos
             </div>
           </div>
         </div>

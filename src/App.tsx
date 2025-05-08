@@ -23,6 +23,31 @@ import AdminUsers from './pages/admin/Users';
 import AdminWebPages from './pages/admin/WebPages';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import mercadoPagoRouter from './api/mercadopago';
+
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middlewares
+app.use(cors());
+app.use(express.json());
+
+// Rotas
+app.use('/api', mercadoPagoRouter);
+
+// Health Check
+app.get('/', (req, res) => {
+  res.send('API Online 🚀');
+});
+
+app.listen(PORT, () => {
+  console.log(`Servidor rodando na porta ${PORT}`);
+});
 
 function App() {
   return (

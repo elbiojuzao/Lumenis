@@ -179,16 +179,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
   
   const updateAddress = (id: string, addressUpdate: Partial<Address>) => {
+    const isSettingMain = addressUpdate.isMain === true;
     const updatedAddresses = addresses.map(addr => {
-      if (addr.id === id) {
-        return { ...addr, ...addressUpdate };
-      }
-      
-      // If the updated address is set as main, set others to not main
-      if (addressUpdate.isMain && addr.id !== id) {
-        return { ...addr, isMain: false };
-      }
-      
+      if (addr.id === id)  return { ...addr, ...addressUpdate };
+
+      if (isSettingMain)  return { ...addr, isMain: false };
+
       return addr;
     });
     

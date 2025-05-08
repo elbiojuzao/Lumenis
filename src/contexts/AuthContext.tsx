@@ -8,6 +8,7 @@ export interface User {
   name: string;
   isAdmin?: boolean;
   createdAt: string;
+  emailVerificado?: boolean;
 }
 
 export interface Address {
@@ -36,6 +37,8 @@ interface AuthContextType {
   removeAddress: (id: string) => void;
   setMainAddress: (id: string) => void;
   updateUser: (data: Partial<User>) => void;
+  verifyEmail: (token: string) => Promise<void>;
+  resendVerification: () => Promise<void>; 
 }
 
 // Mock data for development
@@ -220,6 +223,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCurrentUser(updatedUser);
     localStorage.setItem('user', JSON.stringify(updatedUser));
   };
+
+  const verifyEmail = async (token: string) => {
+    // Lógica mockada para verificar o email
+    console.log(`Verificando email com token: ${token}`);
+    const user = MOCK_USERS.find(u => u.id === currentUser?.id); // Simula encontrar o usuário
+    if (user) {
+      // Simula a atualização do status de verificação do email
+      setCurrentUser({ ...user, emailVerificado: true });
+      localStorage.setItem('user', JSON.stringify({ ...user, emailVerificado: true }));
+    } else {
+      throw new Error('Usuário não encontrado');
+    }
+    return new Promise((resolve) => setTimeout(resolve, 1000)); // Simula uma chamada assíncrona
+  };
+
+  const resendVerification = async () => {
+    if (!currentUser) {
+      throw new Error('Usuário não autenticado');
+    }
+    // Lógica mockada para reenviar o email de verificação
+    console.log(`Reenviando email de verificação para: ${currentUser.email}`);
+    return new Promise((resolve) => setTimeout(resolve, 1500)); // Simula uma chamada assíncrona
+  };
   
   const value = {
     currentUser,
@@ -233,7 +259,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateAddress,
     removeAddress,
     setMainAddress,
-    updateUser
+    updateUser,
+    verifyEmail,
+    resendVerification
   };
   
   return (

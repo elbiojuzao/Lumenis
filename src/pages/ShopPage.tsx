@@ -105,7 +105,7 @@ const ShopPage: React.FC = () => {
                     <p className="text-gray-600 mb-4">{product.description}</p>
                   </Link>
                   <div className="flex justify-between items-center">
-                    <span className="text-purple-600 font-bold text-xl">${product.price.toFixed(2)}</span>
+                    <span className="text-purple-600 font-bold text-xl">R${product.price.toFixed(2)}</span>
                     <div className="flex space-x-2">
                       <Link 
                         to={`/product/${product.id}`}

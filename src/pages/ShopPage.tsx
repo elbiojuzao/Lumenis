@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart, Search, Filter } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 import { mockProducts, Product } from '../data/products';
 import { useCart } from '../contexts/CartContext';
 
@@ -8,10 +8,10 @@ const ShopPage: React.FC = () => {
   const { addItem } = useCart();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
+  //const [showFilters, setShowFilters] = useState(false); -- Parte do filtro não utilizado no momento
   
   // Get unique categories from products
-  const categories = Array.from(new Set(mockProducts.map(product => product.category)));
+  //const categories = Array.from(new Set(mockProducts.map(product => product.category))); -- Parte do filtro não utilizado no momento
   
   // Filter products based on search term and category
   const filteredProducts = mockProducts.filter(product => {
@@ -36,7 +36,7 @@ const ShopPage: React.FC = () => {
           </p>
         </div>
         
-        {/* Search and Filters */}
+        {/* Search and Filters 
         <div className="mb-8">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="relative w-full md:w-1/2">
@@ -84,7 +84,7 @@ const ShopPage: React.FC = () => {
             </div>
           </div>
         </div>
-        
+        */}
         {/* Products Grid */}
         {filteredProducts.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

@@ -1,18 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter, useParams } from 'next/navigation'
 import { ShoppingCart, ChevronLeft, Plus, Minus, Check } from 'lucide-react';
 import { mockProducts, Product } from '../data/products';
 import { useCart } from '../contexts/CartContext';
 
-const ProductPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+export default function ProductPage() {
+  const router = useRouter()
+  const params = useParams()
   const { addItem } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
   
   useEffect(() => {
+    const id = params?.id
+    if (!id) {
+      router.push('/shop')
+      return
+    }
+
     // Find product by ID
     const foundProduct = mockProducts.find(p => p.id === id);
     
@@ -20,9 +28,9 @@ const ProductPage: React.FC = () => {
       setProduct(foundProduct);
     } else {
       // Redirect to shop if product not found
-      navigate('/shop');
+      router.push('/shop');
     }
-  }, [id, navigate]);
+  }, [params?.id, router]);
   
   const handleAddToCart = () => {
     if (product) {
@@ -58,7 +66,7 @@ const ProductPage: React.FC = () => {
         {/* Breadcrumb Navigation */}
         <div className="mb-8">
           <button 
-            onClick={() => navigate('/shop')}
+            onClick={() => router.push('/shop')}
             className="flex items-center text-gray-600 hover:text-purple-600 transition duration-150"
           >
             <ChevronLeft size={20} className="mr-1" />
@@ -149,6 +157,4 @@ const ProductPage: React.FC = () => {
       </div>
     </div>
   );
-};
-
-export default ProductPage;
+}

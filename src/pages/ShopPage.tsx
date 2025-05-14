@@ -1,5 +1,7 @@
+'use client'
+
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { ShoppingCart } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { Product } from '../types/product';
@@ -100,7 +102,7 @@ const ShopPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredProducts.map(product => (
               <div key={product._id} className="bg-white rounded-lg shadow-md overflow-hidden transform transition duration-300 hover:shadow-xl hover:-translate-y-1">
-                <Link to={`/product/${product._id}`} className="block">
+                <Link href={`/product/${product._id}`} className="block">
                   <div className="h-64 overflow-hidden">
                     <img 
                       src={product.imageSrc} 
@@ -110,7 +112,7 @@ const ShopPage: React.FC = () => {
                   </div>
                 </Link>
                 <div className="p-6">
-                  <Link to={`/product/${product._id}`} className="block">
+                  <Link href={`/product/${product._id}`} className="block">
                     <h3 className="text-xl font-semibold text-gray-900 mb-2 hover:text-purple-600 transition duration-150">{product.name}</h3>
                     <p className="text-gray-600 mb-4">{product.description}</p>
                   </Link>
@@ -118,7 +120,7 @@ const ShopPage: React.FC = () => {
                     <span className="text-purple-600 font-bold text-xl">R${product.price.toFixed(2)}</span>
                     <div className="flex space-x-2">
                       <Link 
-                        to={`/product/${product._id}`}
+                        href={`/product/${product._id}`}
                         className="bg-gray-200 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-300 transition duration-150"
                       >
                         Detalhes

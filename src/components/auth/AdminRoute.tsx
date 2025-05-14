@@ -1,23 +1,22 @@
-import React from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+'use client'
 
-interface AdminRouteProps {
-  children: React.ReactNode;
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '../../lib/contexts/AuthContext'
+
+export default function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isAdmin, isLoading } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!isLoading && (!isAuthenticated || !isAdmin)) {
+      router.push('/login')
+    }
+  }, [isAuthenticated, isAdmin, isLoading, router])
+
+  if (isLoading) {
+    return <div>Carregando...</div>
+  }
+
+  return isAuthenticated && isAdmin ? <>{children}</> : null
 }
-
-const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
-  const { isAuthenticated, isAdmin } = useAuth();
-  
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-  
-  if (!isAdmin) {
-    return <Navigate to="/" replace />;
-  }
-  
-  return <>{children}</>;
-};
-
-export default AdminRoute;

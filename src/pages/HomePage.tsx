@@ -1,5 +1,7 @@
+'use client'
+
 import React from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { ShoppingCart, PenSquare } from 'lucide-react';
 import { mockProducts } from '../data/products';
 
@@ -20,14 +22,14 @@ const HomePage: React.FC = () => {
             </p>
             <div className="flex flex-wrap gap-4">
               <Link 
-                to="/register" 
+                href="/register" 
                 className="bg-white text-purple-700 px-6 py-3 rounded-lg font-medium text-lg hover:bg-gray-100 transform hover:scale-105 transition duration-200 inline-flex items-center"
               >
                 <PenSquare size={20} className="mr-2" />
                 Crie sua conta
               </Link>
               <Link 
-                to="/shop" 
+                href="/shop" 
                 className="bg-transparent border-2 border-white px-6 py-3 rounded-lg font-medium text-lg hover:bg-white hover:text-purple-700 transform hover:scale-105 transition duration-200 inline-flex items-center"
               >
                 <ShoppingCart size={20} className="mr-2" />
@@ -88,7 +90,7 @@ const HomePage: React.FC = () => {
                   <p className="text-gray-600 mb-4">{product.description}</p>
                   <div className="flex justify-between items-center">
                     <span className="text-purple-600 font-bold text-xl">R${product.price.toFixed(2)}</span>
-                    <Link to={`/product/${product.id}`} className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition duration-150">
+                    <Link href={`/product/${product.id}`} className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition duration-150">
                       Ver detalhes
                     </Link>
                   </div>
@@ -98,7 +100,7 @@ const HomePage: React.FC = () => {
           </div>
           
           <div className="text-center mt-12">
-            <Link to="/shop" className="inline-flex items-center px-6 py-3 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition duration-150">
+            <Link href="/shop" className="inline-flex items-center px-6 py-3 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition duration-150">
               <ShoppingCart size={20} className="mr-2" />
               Veja todos os nossos produtos
             </Link>
@@ -190,7 +192,7 @@ const HomePage: React.FC = () => {
           <p className="text-xl opacity-90 mb-8 max-w-3xl mx-auto">
             Junte-se a nos e venha criar lindas memorias queridas para aqueles que amamos.
           </p>
-          <Link to="/register" className="bg-white text-purple-700 px-8 py-4 rounded-lg font-medium text-lg inline-flex items-center hover:bg-gray-100 transform hover:scale-105 transition duration-200">
+          <Link href="/register" className="bg-white text-purple-700 px-8 py-4 rounded-lg font-medium text-lg inline-flex items-center hover:bg-gray-100 transform hover:scale-105 transition duration-200">
             <PenSquare size={24} className="mr-2" />
             Crie sua conta gratuita
           </Link>

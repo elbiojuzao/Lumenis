@@ -1,5 +1,7 @@
+'use client'
+
 import React from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link'
 import { Facebook, Twitter, Instagram, Mail, MapPin, Phone, PenSquare } from 'lucide-react';
 
 const Footer: React.FC = () => {
@@ -34,22 +36,22 @@ const Footer: React.FC = () => {
             <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/" className="text-gray-300 hover:text-white transition duration-150">
+                <Link href="/" className="text-gray-300 hover:text-white transition duration-150">
                   Inicio
                 </Link>
               </li>
               <li>
-                <Link to="/shop" className="text-gray-300 hover:text-white transition duration-150">
+                <Link href="/shop" className="text-gray-300 hover:text-white transition duration-150">
                   Comprar
                 </Link>
               </li>
               <li>
-                <Link to="/login" className="text-gray-300 hover:text-white transition duration-150">
+                <Link href="/login" className="text-gray-300 hover:text-white transition duration-150">
                   Minha conta
                 </Link>
               </li>
               <li>
-                <Link to="/page-editor" className="text-gray-300 hover:text-white transition duration-150">
+                <Link href="/page-editor" className="text-gray-300 hover:text-white transition duration-150">
                   Criar pagina de homenagem
                 </Link>
               </li>

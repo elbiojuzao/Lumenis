@@ -1,65 +1,42 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { verifyToken } from '@/lib/auth';
+import { jwtVerify } from 'jose';
+
+const secret = new TextEncoder().encode(
+  process.env.JWT_SECRET || 'your-secret-key'
+);
 
 export async function middleware(request: NextRequest) {
-  // Rotas públicas
-  const publicRoutes = [
-    '/api/auth/login',
-    '/api/auth/register',
-    '/api/products',
-    '/api/cupons/validate',
-  ];
-
-  if (publicRoutes.includes(request.nextUrl.pathname)) {
+  // Rotas públicas que não precisam de autenticação
+  const publicRoutes = ['/login', '/register', '/', '/shop', '/api/auth/login', '/api/auth/register'];
+  
+  // Verifica se é uma rota pública ou página de produto
+  if (publicRoutes.includes(request.nextUrl.pathname) || 
+      request.nextUrl.pathname.startsWith('/product/')) {
     return NextResponse.next();
   }
 
-  // Verificar token de autenticação
-  const token = request.headers.get('authorization')?.split(' ')[1];
+  // Rotas da API que não precisam de autenticação
+  if (request.nextUrl.pathname.startsWith('/api/products') && request.method === 'GET') {
+    return NextResponse.next();
+  }
+
+  const token = request.cookies.get('token')?.value;
 
   if (!token) {
-    return NextResponse.json(
-      { error: 'Token não fornecido' },
-      { status: 401 }
-    );
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
   try {
-    const decoded = await verifyToken(token);
-    
-    // Adicionar informações do usuário ao request
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set('x-user-id', decoded.id);
-    requestHeaders.set('x-user-role', decoded.isAdmin ? 'admin' : 'user');
-
-    // Verificar rotas de admin
-    const adminRoutes = [
-      '/api/users',
-      '/api/cupons',
-      '/api/pedidos/admin',
-    ];
-
-    if (adminRoutes.some(route => request.nextUrl.pathname.startsWith(route)) && !decoded.isAdmin) {
-      return NextResponse.json(
-        { error: 'Acesso negado' },
-        { status: 403 }
-      );
-    }
-
-    return NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    });
+    await jwtVerify(token, secret);
+    return NextResponse.next();
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Token inválido' },
-      { status: 401 }
-    );
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 }
 
 export const config = {
-  matcher: '/api/:path*',
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico).*)',
+  ],
 }; 

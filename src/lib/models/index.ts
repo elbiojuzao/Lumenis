@@ -1,0 +1,7 @@
+export { default as Product } from './Product'
+export { default as User } from './User'
+export { default as Pedido } from './Pedido'
+export { default as ItemPedido } from './ItemPedido'
+export { default as Address } from './Address'
+export { default as Homenagem } from './Homenagem'
+export { default as Cupom } from './Cupom' 

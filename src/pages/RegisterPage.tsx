@@ -1,11 +1,14 @@
+'use client'
+
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { User, Mail, Lock, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
-const RegisterPage: React.FC = () => {
+export default function RegisterPage() {
   const { register, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -20,7 +23,7 @@ const RegisterPage: React.FC = () => {
   
   // If user is already logged in, redirect to homepage
   if (isAuthenticated) {
-    navigate('/');
+    router.push('/');
     return null;
   }
   
@@ -54,7 +57,7 @@ const RegisterPage: React.FC = () => {
     
     try {
       await register(username, email, password, name);
-      navigate('/');
+      router.push('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
       setIsLoading(false);
@@ -69,7 +72,7 @@ const RegisterPage: React.FC = () => {
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
           Ou{' '}
-          <Link to="/login" className="font-medium text-purple-600 hover:text-purple-500">
+          <Link href="/login" className="font-medium text-purple-600 hover:text-purple-500">
             entre com uma conta existente.
           </Link>
         </p>
@@ -231,6 +234,4 @@ const RegisterPage: React.FC = () => {
       </div>
     </div>
   );
-};
-
-export default RegisterPage;
+}

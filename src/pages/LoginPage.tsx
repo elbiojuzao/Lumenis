@@ -1,46 +1,45 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Mail, Lock, AlertCircle } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+'use client'
 
-const LoginPage: React.FC = () => {
-  const { login, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+import { useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { Mail, Lock, AlertCircle } from 'lucide-react'
+import { useAuth } from '../lib/contexts/AuthContext'
+
+export default function LoginPage() {
+  const { login, isAuthenticated } = useAuth()
+  const router = useRouter()
   
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
   
   // If user is already logged in, redirect to homepage
   if (isAuthenticated) {
-    navigate('/');
-    return null;
+    router.push('/dashboard')
+    return null
   }
   
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     
     if (!email.trim() || !password.trim()) {
-      setError('All fields are required');
-      return;
+      setError('All fields are required')
+      return
     }
     
-    setIsLoading(true);
-    setError('');
+    setIsLoading(true)
+    setError('')
     
     try {
-      await login(email, password);
-      
-      // Redirect to the page the user was trying to access, or to the homepage
-      const from = location.state?.from?.pathname || '/';
-      navigate(from);
+      await login(email, password)
+      router.push('/dashboard')
     } catch (err) {
-      setError('Invalid email or password');
-      setIsLoading(false);
+      setError('Invalid email or password')
+      setIsLoading(false)
     }
-  };
+  }
   
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -50,7 +49,7 @@ const LoginPage: React.FC = () => {
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
           Ou{' '}
-          <Link to="/register" className="font-medium text-purple-600 hover:text-purple-500">
+          <Link href="/register" className="font-medium text-purple-600 hover:text-purple-500">
             criar nova conta
           </Link>
         </p>
@@ -157,8 +156,8 @@ const LoginPage: React.FC = () => {
               <div>
                 <button
                   onClick={() => {
-                    setEmail('user@example.com');
-                    setPassword('password');
+                    setEmail('user@example.com')
+                    setPassword('password')
                   }}
                   className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
@@ -168,8 +167,8 @@ const LoginPage: React.FC = () => {
               <div>
                 <button
                   onClick={() => {
-                    setEmail('admin@example.com');
-                    setPassword('password');
+                    setEmail('admin@example.com')
+                    setPassword('password')
                   }}
                   className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
@@ -181,7 +180,5 @@ const LoginPage: React.FC = () => {
         </div>
       </div>
     </div>
-  );
-};
-
-export default LoginPage;
+  )
+}

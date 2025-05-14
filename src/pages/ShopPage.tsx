@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ShoppingCart } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { Product } from '../types/product';
+import clientApi from '../lib/clientApi';
 
 const ShopPage: React.FC = () => {
   const { addItem } = useCart();
@@ -15,29 +16,11 @@ const ShopPage: React.FC = () => {
   useEffect(() => {
     async function loadProducts() {
       try {
-        const res = await fetch('/api/product');
-        if (!res.ok) {
-          console.error('Erro na resposta da API:', res.status, res.statusText);
-          const errorText = await res.text();
-          console.error('Conteúdo do erro:', errorText);
-          throw new Error(`Falha ao carregar produtos: ${res.status} ${res.statusText}`);
-        }
-
-         const responseText = await res.text();
-        console.log('Resposta bruta da API:', responseText);
-
-        const data = JSON.parse(responseText); // Tentamos parsear aqui para ver se ainda dá erro
+        const { data } = await clientApi.get('/products');
         setProducts(data);
-        
-        //if (!res.ok) throw new Error('Falha ao carregar produtos');
-        //const data = await res.json();
-        //setProducts(data);
       } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError('Ocorreu um erro inesperado ao carregar os produtos');
-        }
+        console.error('Erro ao carregar produtos:', err);
+        setError(err instanceof Error ? err.message : 'Erro ao carregar produtos');
       } finally {
         setLoading(false);
       }

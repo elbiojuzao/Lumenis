@@ -4,7 +4,7 @@ import nodemailer from 'nodemailer';
 import User from '../models/User';
 import { nanoid } from 'nanoid';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET || 'sua_chave_secreta_aqui';
 const EMAIL_FROM = process.env.EMAIL_FROM || 'noreply@example.com';
 const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD || '';
 
@@ -17,17 +17,25 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-export const generateToken = (userId: string): string => {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' });
-};
+interface TokenPayload {
+  id: string;
+  isAdmin: boolean;
+}
 
-export const verifyToken = (token: string): { userId: string } => {
+export function generateToken(payload: TokenPayload): string {
+  return jwt.sign(payload, JWT_SECRET, {
+    expiresIn: '7d'
+  });
+}
+
+export async function verifyToken(token: string): Promise<TokenPayload> {
   try {
-    return jwt.verify(token, JWT_SECRET) as { userId: string };
+    const decoded = jwt.verify(token, JWT_SECRET) as TokenPayload;
+    return decoded;
   } catch (error) {
-    throw new Error('Invalid token');
+    throw new Error('Token inválido');
   }
-};
+}
 
 export const hashPassword = async (password: string): Promise<string> => {
   return bcrypt.hash(password, 10);
@@ -102,7 +110,7 @@ export const registerUser = async (userData: {
   await sendVerificationEmail(userData.email, emailToken);
 
   // Generate JWT
-  const token = generateToken(user._id.toString());
+  const token = generateToken({ id: user._id.toString(), isAdmin: false });
 
   return { user, token };
 };
@@ -127,7 +135,7 @@ export const loginUser = async (email: string, password: string): Promise<{ user
   await user.save();
 
   // Generate JWT
-  const token = generateToken(user._id.toString());
+  const token = generateToken({ id: user._id.toString(), isAdmin: false });
 
   // Remove password from response
   const userWithoutPassword = user.toObject();
